@@ -93,16 +93,11 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build Docker image
-        run: |
-          docker build \
-            --build-arg REACT_APP_MOVIE_API_URL=http://a6e2520991835469c9fd77214872678a-1232486355.us-east-1.elb.amazonaws.com \
-            -t ${{ steps.login-ecr.outputs.registry }}/frontend:${{ github.sha }} .
+        run: docker build --build-arg REACT_APP_MOVIE_API_URL=${{ secrets.REACT_APP_MOVIE_API_URL }} -t ${{ steps.login-ecr.outputs.registry }}/frontend:${{ github.sha }} .
 
       - name: Push Docker image to ECR
-        run: |
-          docker push ${{ steps.login-ecr.outputs.registry }}/frontend:${{ github.sha }}
+        run: docker push ${{ steps.login-ecr.outputs.registry }}/frontend:${{ github.sha }}
 
-  ```yaml
   deploy:
     runs-on: ubuntu-latest
     needs: build
