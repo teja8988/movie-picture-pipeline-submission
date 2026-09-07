@@ -1,4 +1,3 @@
-```yaml
 name: Frontend Continuous Deployment
 
 on:
@@ -122,4 +121,4 @@ jobs:
         run: |
           kubectl apply -k k8s
           kubectl set image deployment/frontend frontend=097326127858.dkr.ecr.us-east-1.amazonaws.com/frontend:${{ github.sha }}
-```
+
