@@ -1,4 +1,3 @@
-```yaml
 name: Backend CD
 
 "on":
@@ -133,4 +132,4 @@ jobs:
             --token="$TOKEN" \
             set image deployment/backend \
             backend=097326127858.dkr.ecr.us-east-1.amazonaws.com/backend:${{ github.sha }}
-```
+
