@@ -1,6 +1,7 @@
+```yaml
 name: Backend CD
 
-on:
+"on":
   push:
     branches:
       - main
@@ -81,5 +82,55 @@ jobs:
       - name: Install dependencies
         run: pipenv install --dev
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
       - name: Build Docker image
-        run: docker build -t backend:${{ github.sha }} .
+        run: docker build -t ${{ steps.login-ecr.outputs.registry }}/backend:${{ github.sha }} .
+
+      - name: Push Docker image to ECR
+        run: docker push ${{ steps.login-ecr.outputs.registry }}/backend:${{ github.sha }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Deploy backend
+        working-directory: starter/backend
+        run: |
+          aws eks get-token --region us-east-1 --cluster-name cluster > token.json
+
+          TOKEN=$(python3 -c "import json; print(json.load(open('token.json'))['status']['token'])")
+
+          kubectl \
+            --server=https://E7906F9813A16D62B2B20A316F89BAEE.gr7.us-east-1.eks.amazonaws.com \
+            --insecure-skip-tls-verify=true \
+            --token="$TOKEN" \
+            apply -k k8s
+
+          kubectl \
+            --server=https://E7906F9813A16D62B2B20A316F89BAEE.gr7.us-east-1.eks.amazonaws.com \
+            --insecure-skip-tls-verify=true \
+            --token="$TOKEN" \
+            set image deployment/backend \
+            backend=097326127858.dkr.ecr.us-east-1.amazonaws.com/backend:${{ github.sha }}
+```
