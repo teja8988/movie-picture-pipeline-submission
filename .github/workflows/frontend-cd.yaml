@@ -1,3 +1,4 @@
+```yaml
 name: Frontend Continuous Deployment
 
 on:
@@ -84,7 +85,6 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: us-east-1
 
       - name: Login to Amazon ECR
@@ -112,12 +112,10 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Update kubeconfig
-        run: aws eks update-kubeconfig --region us-east-1 --name cluster
-
       - name: Deploy frontend
         working-directory: starter/frontend
         run: |
-          kubectl apply -k k8s
-          kubectl set image deployment/frontend frontend=097326127858.dkr.ecr.us-east-1.amazonaws.com/frontend:${{ github.sha }}
-
+          TOKEN=$(aws eks get-token --region us-east-1 --cluster-name cluster --output jsonpath='{.status.token}')
+          kubectl --server=https://E7906F9813A16D62B2B20A316F89BAEE.gr7.us-east-1.eks.amazonaws.com --insecure-skip-tls-verify=true --token="$TOKEN" apply -k k8s
+          kubectl --server=https://E7906F9813A16D62B2B20A316F89BAEE.gr7.us-east-1.eks.amazonaws.com --insecure-skip-tls-verify=true --token="$TOKEN" set image deployment/frontend frontend=097326127858.dkr.ecr.us-east-1.amazonaws.com/frontend:${{ github.sha }}
+```
